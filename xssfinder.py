@@ -1,23 +1,25 @@
 import urllib.request
-import sys
-import os
+import sys, os, time
 import subprocess
 import requests
 from bs4 import BeautifulSoup as soup
-from time import sleep
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 
 class XssFinder:
 
     def __init__(self, target):
         self.target = target
-        self.wordlist = open("Wordlists/top1k.txt", 'r').read()
+        self.payloads = open("Wordlists/payloads.txt", 'r').read()
         self.replacedWww = self.target.replace(self.target[:4], '')
         self.replacedHttp = self.target.replace(self.target, 'http://' + self.target)
+        self.driver = webdriver.Firefox()
+        time.sleep(2)
+        self.openTarget = self.driver.get(self.replacedHttp)
 
         self.DiscoverySubd()
-
     def DiscoverySubd(self):
-        subs = subprocess.call('cd /home/espvuln/AutoXss/Sublist3r && python3 sublist3r.py -d '  + self.replacedWww ,shell=True)
+        #subs = subprocess.call('cd /home/espvuln/AutoXss/Sublist3r && python3 sublist3r.py -d '  + self.replacedWww ,shell=True)
         self.connectHost()
 
     def connectHost(self):
@@ -25,23 +27,16 @@ class XssFinder:
             urllib.request.urlopen(self.replacedHttp)
             print("Connected")
         except:
-            print("Connection has lost")
+            pass
 
         self.findAllInputs()
 
     def findAllInputs(self):
-        fields = {}
-        req = requests.get(self.replacedHttp).text
-        page = soup(req, 'html5lib')
-        inputs = page.find_all('input')
+        inputs = self.driver.find_element_by_tag_name("input")
 
-        for input in inputs:
-            # resim, buton gibi inputları dışlıyoruz
-            if input['type'] in ('submit', 'image'):
-                continue
+        inputAttrValue = inputs.get_attribute("type")
+        print("inputs.get_attribute(\'value\') : {0}".format(inputAttrValue,))
 
-            if input['type'] in ('text', 'hidden', 'password', 'textarea', 'search', 'email', 'url'):
-                
 
 xss = XssFinder(target=input("Target ( For example: www.google.com ) :  "))
 
